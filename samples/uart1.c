@@ -3,7 +3,7 @@
  *
  *  Test the use the Auxiliary UART library.
  *  Print out some test, CPU ID, and run a keyboard echo loop.
- *  Requires a serial terminal set to 9600,N,1
+ *  Requires a serial terminal set to 57600,N,1
  *
  */
 
@@ -30,14 +30,13 @@ void kernel(uint32_t r0, uint32_t machid, uint32_t atags)
 
     /* Initialize the IO system
      */
-    bcm2835_auxuart_init(BAUD_9600, 0, 0, AUXUART_DEFAULT);
+    bcm2835_auxuart_init(BAUD_57600, 0, 0, AUXUART_DEFAULT);
 
     /* Message
      */
     for ( i = message; *i; i++ )
     {
         bcm2835_auxuart_putchr(*i);
-        blink();
     }
 
     /* CPU ID:

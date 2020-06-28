@@ -15,6 +15,9 @@ all: libraries sample
 #------------------------------------------------------------------------------------
 .PHONY: clean sample libgpio
 
+vga:
+	cd ./vga-rpi && make vga
+
 sample:
 	cd ./samples && make fb
 
@@ -22,5 +25,6 @@ libraries:
 	cd ./lib && make all
 
 clean:
+	cd ./vga-rpi && make clean
 	cd ./samples && make clean
 	cd ./lib && make clean

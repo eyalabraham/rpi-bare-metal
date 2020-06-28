@@ -119,14 +119,14 @@ int bcm2835_auxuart_init(baud_t baud_rate_div, uint32_t rx_tout, uint32_t tx_tou
         recv_wr_ptr = 0;
         recv_rd_ptr = 0;
 
-        irq_init();
-
         /* Setup interrupt controller
          */
         irq_register_handler(IRQ_AUX_SERDEV, bcm2835_auxuart_isr);
 
         /* Enable UART interrupt
          */
+        dmb();
+
         pUART1->aux_mu_ier_reg |= UART_RX_INT_ENA;
 
         dmb();

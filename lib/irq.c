@@ -106,6 +106,8 @@ int irq_register_handler(intr_source_t source, void (*handler_func)(void))
         shift = source % 32;
     }
 
+    dmb();
+
     dispatch_table[handler_cnt].device_irq_pend_mask = (1 << shift);
     dispatch_table[handler_cnt].pending_reg = pend_reg;
     dispatch_table[handler_cnt].handler = handler_func;
