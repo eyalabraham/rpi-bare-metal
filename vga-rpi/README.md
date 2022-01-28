@@ -107,10 +107,11 @@ Put Character commands #4 and #6 provide direct character placement parameters, 
 
 ### Files
 
-- ```vga.c* main module and emulator control loop
-- ```fb.c* frame buffer and graphics emulation
-- ```uart.c* UART IO driver
-- ```util.c* utility and helper functions (debug print etc)
-- ```include/iv8x16u.h* 8x16 font bitmap definition [bitmap font source](https://github.com/farsil/ibmfonts) for code page 437 characters
-- ```include/ic8x8u.h*  8x8 font bitmap definition [bitmap font source](https://github.com/farsil/ibmfonts) for code page 437 characters
-- ```include/config.h* compile time module configuration
+- ```vga.c``` main module and emulator control loop
+- ```fb.c``` frame buffer and graphics emulation
+- ```uart.c``` UART IO driver
+- ```util.c``` utility and helper functions (debug print etc)
+- ```include/iv8x16u.h``` 8x16 font bitmap definition [bitmap font source](https://github.com/farsil/ibmfonts) for code page 437 characters
+- ```include/ic8x8u.h```  8x8 font bitmap definition [bitmap font source](https://github.com/farsil/ibmfonts) for code page 437 characters
+- ```include/config.h``` compile time module configuration
+

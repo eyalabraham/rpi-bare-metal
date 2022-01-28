@@ -22,7 +22,7 @@ All projects use a specialized [printf() implementation by Marco Paland](https:/
 
 > The BCM2835 Auxiliary UART (UART1) must be initialized in the application for the ```printf()``` function to work.
 
-## RPi maibox interface library
+## RPi mailbox interface library
 
 Source by Brian Sidebotham from [GitHub sample](https://github.com/BrianSidebotham/arm-tutorial-rpi/tree/master/part-5/armc-016)
 
