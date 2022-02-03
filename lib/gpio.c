@@ -14,6 +14,7 @@
  */
 
 #include    "gpio.h"
+#include    "mailbox.h"
 
 /* -----------------------------------------
    Module globals
@@ -100,9 +101,9 @@ void bcm2835_gpio_set(int pin)
     dmb();
 
     if ( pin < 32 )
-        bcm2835_gpio->gpset0 |= (1 << shift);
+        bcm2835_gpio->gpset0 = (1 << shift);
     else
-        bcm2835_gpio->gpset1 |= (1 << shift);
+        bcm2835_gpio->gpset1 = (1 << shift);
 
     dmb();
 }
@@ -125,9 +126,9 @@ void bcm2835_gpio_clr(int pin)
     dmb();
 
     if ( pin < 32 )
-        bcm2835_gpio->gpclr0 |= (1 << shift);
+        bcm2835_gpio->gpclr0 = (1 << shift);
     else
-        bcm2835_gpio->gpclr1 |= (1 << shift);
+        bcm2835_gpio->gpclr1 = (1 << shift);
 
     dmb();
 }
@@ -700,6 +701,48 @@ void bcm2835_gpio_set_pud(int pin, bcm2835PUDControl_t pud)
 
     bcm2835_crude_delay(150);
     bcm2835_gpio_clr_pudclk(pin);
+}
+
+/*------------------------------------------------
+ * bcm2835_gpio_write_mask()
+ *
+ *  Sets the first 32 GPIO output pins specified
+ *  in the mask to the value given by value.
+ *
+ * param:  Value values required for each bit masked in by mask,
+ *         for example: (1 << RPI_GPIO_P1_03) | (1 << RPI_GPIO_P1_05)
+ *         Mask of pins to affect. for example: (1 << RPI_GPIO_P1_03) | (1 << RPI_GPIO_P1_05)
+ * return: none
+ *
+ */
+void bcm2835_gpio_write_mask(uint32_t value, uint32_t mask)
+{
+    bcm2835_gpio_set_multi(value & mask);
+    bcm2835_gpio_clr_multi((~value) & mask);
+}
+
+/*------------------------------------------------
+ * bcm2835_core_clk()
+ *
+ *  Return the core clock frequency in Hz
+ *
+ * param:  none
+ * return: core clock frequency in Hz, 0=failed
+ *
+ */
+uint32_t bcm2835_core_clk(void)
+{
+    mailbox_tag_property_t *mp;
+
+    bcm2835_mailbox_init();
+    bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_CORE);
+
+    if ( !bcm2835_mailbox_process() )
+        return 0;
+
+    mp = bcm2835_mailbox_get_property(TAG_GET_CLOCK_RATE);
+
+    return mp->values.fb_alloc.param2;
 }
 
 /*------------------------------------------------

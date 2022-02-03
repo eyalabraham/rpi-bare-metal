@@ -19,7 +19,7 @@ vga:
 	cd ./vga-rpi && make vga
 
 sample:
-	cd ./samples && make fb
+	cd ./samples && make uart1
 
 libraries:
 	cd ./lib && make all

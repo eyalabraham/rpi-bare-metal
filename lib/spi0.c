@@ -1,5 +1,5 @@
 /*
- * spi.h
+ * spi0.c
  *
  *  Driver library module for the SPI0 interface of the BCM2835.
  *  The module only supports SPI0, SPI1 is available on RPi Zero 40-pin
@@ -14,7 +14,7 @@
  */
 
 #include    "gpio.h"
-#include    "spi.h"
+#include    "spi0.h"
 
 /* -----------------------------------------
    Definitions
@@ -58,10 +58,10 @@
 /* -----------------------------------------
    Module globals
 ----------------------------------------- */
-static spi_regs_t *pSPI = (spi_regs_t*)BCM2835_SPI0_BASE;
+static spi0_regs_t *pSPI = (spi0_regs_t*)BCM2835_SPI0_BASE;
 
 /*------------------------------------------------
- * bcm2835_spi_init()
+ * bcm2835_spi0_init()
  *
  *  Initialize the SPI0 interface.
  *  Start SPI operations with RPi SPI0 pins P1-19 (MOSI),
@@ -71,9 +71,21 @@ static spi_regs_t *pSPI = (spi_regs_t*)BCM2835_SPI0_BASE;
  * return: 1- if successful, 0- otherwise
  *
  */
-int bcm2835_spi_init(uint32_t configuration)
+int bcm2835_spi0_init(uint32_t configuration)
 {
     uint32_t    spi_config = 0x00000000;
+    uint32_t    system_clock;
+    uint32_t    spi_rate_div;
+
+    /* Get core frequency and dynamically calculate rate divisor
+     */
+    if ( !(system_clock = bcm2835_core_clk()) )
+        return 0;
+
+    spi_rate_div = system_clock / SPI0_DEFAULT_RATE;
+
+    if ( spi_rate_div & 1)
+        spi_rate_div++;
 
     /* Set the SPI0 pins to the Alt-0 function to enable SPI0 access on them
      */
@@ -86,27 +98,27 @@ int bcm2835_spi_init(uint32_t configuration)
     /* Compile configuration from configuration bits
      * and apply to device
      */
-    if ( configuration & SPI_CPHA_BEGIN )
+    if ( configuration & SPI0_CPHA_BEGIN )
         spi_config |= SPI0_CPHA;
 
-    if ( configuration & SPI_CPOL_HI )
+    if ( configuration & SPI0_CPOL_HI )
         spi_config |= SPI0_CPOL;
 
-    if ( configuration & SPI_CSPOL_HI )
+    if ( configuration & SPI0_CSPOL_HI )
         spi_config |= SPI0_CSPOL_ACT_HI | SPI0_CSPOL0_ACT_HI | SPI0_CSPOL1_ACT_HI | SPI0_CSPOL2_ACT_HI;
 
     dmb();
 
     pSPI->spi_cs = spi_config;
 
-    pSPI->spi_clk = SPI0_DATA_RATE_488KHZ;
+    pSPI->spi_clk = spi_rate_div;
 
     return 1;
 }
 
 
 /*------------------------------------------------
- * bcm2835_spi_close()
+ * bcm2835_spi0_close()
  *
  *  Return SPI GPIO pins to default input.
  *
@@ -114,7 +126,7 @@ int bcm2835_spi_init(uint32_t configuration)
  * return: none
  *
  */
-void bcm2835_spi_close(void)
+void bcm2835_spi0_close(void)
 {
     bcm2835_gpio_fsel(RPI_GPIO_P1_26, BCM2835_GPIO_FSEL_INPT);
     bcm2835_gpio_fsel(RPI_GPIO_P1_24, BCM2835_GPIO_FSEL_INPT);
@@ -128,22 +140,37 @@ void bcm2835_spi_close(void)
 }
 
 /*------------------------------------------------
- * bcm2835_spi_set_rate()
+ * bcm2835_spi0_set_rate()
  *
  *  Set the SPI data transfer rate.
  *
- * param:  Transfer rate preset constant
- * return: none
+ * param:  Transfer rate in Hz
+ * return: 1- if successful, 0- otherwise
  *
  */
-void bcm2835_spi_set_rate(spi_clock_div_t data_rate)
+int bcm2835_spi0_set_rate(uint32_t data_rate)
 {
+    uint32_t    system_clock;
+    uint32_t    spi_rate_div;
+
+    /* Get core frequency and dynamically calculate rate divisor
+     */
+    if ( !(system_clock = bcm2835_core_clk()) )
+        return 0;
+
+    spi_rate_div = system_clock / data_rate;
+
+    if ( spi_rate_div & 1)
+        spi_rate_div++;
+
     dmb();
-    pSPI->spi_clk = data_rate;
+    pSPI->spi_clk = spi_rate_div;
+
+    return 1;
 }
 
 /*------------------------------------------------
- * bcm2835_spi_clk_mode()
+ * bcm2835_spi0_clk_mode()
  *
  *  Set the SPI clock mode (CPOL/CPHA).
  *
@@ -151,7 +178,7 @@ void bcm2835_spi_set_rate(spi_clock_div_t data_rate)
  * return: none
  *
  */
-void bcm2835_spi_clk_mode(spi_mode_t mode)
+void bcm2835_spi0_clk_mode(spi0_mode_t mode)
 {
     uint32_t    value;
 
@@ -162,7 +189,7 @@ void bcm2835_spi_clk_mode(spi_mode_t mode)
 }
 
 /*------------------------------------------------
- * bcm2835_spi_cs()
+ * bcm2835_spi0_cs()
  *
  *  Set the SPI chip select to assert during a transfer.
  *
@@ -170,7 +197,7 @@ void bcm2835_spi_clk_mode(spi_mode_t mode)
  * return: none
  *
  */
-void bcm2835_spi_cs(spi_chip_sel_t cs)
+void bcm2835_spi0_cs(spi0_chip_sel_t cs)
 {
     uint32_t    value;
 
@@ -181,7 +208,7 @@ void bcm2835_spi_cs(spi_chip_sel_t cs)
 }
 
 /*------------------------------------------------
- * bcm2835_spi_cs_polarity()
+ * bcm2835_spi0_cs_polarity()
  *
  *  Set the SPI chip select polarity HIGH or LOW, during a transfer.
  *
@@ -189,7 +216,7 @@ void bcm2835_spi_cs(spi_chip_sel_t cs)
  * return: none
  *
  */
-void bcm2835_spi_cs_polarity(spi_chip_sel_t cs, int level)
+void bcm2835_spi0_cs_polarity(spi0_chip_sel_t cs, int level)
 {
     uint32_t    value;
     int         shift;
@@ -203,7 +230,7 @@ void bcm2835_spi_cs_polarity(spi_chip_sel_t cs, int level)
 }
 
 /*------------------------------------------------
- * bcm2835_spi_transfer_Ex()
+ * bcm2835_spi0_transfer_Ex()
  *
  *  Transfers one or more byte to and from the currently selected SPI slave.
  *  Asserts the currently selected CS pins during the transfer.
@@ -216,10 +243,11 @@ void bcm2835_spi_cs_polarity(spi_chip_sel_t cs, int level)
  * return: none
  *
  */
-void bcm2835_spi_transfer_Ex(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t count)
+void bcm2835_spi0_transfer_Ex(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t count)
 {
     uint32_t tx_count = 0;
     uint32_t rx_count = 0;
+    uint8_t  byte;
 
     pSPI->spi_cs |= SPI0_RXTX_FIFO_CLR;
 
@@ -243,14 +271,15 @@ void bcm2835_spi_transfer_Ex(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t count)
         /* Rx FIFO not empty, so get the next received bytes
          * if called provided a destination buffer, otherwise drop bytes
          */
-        if ( rx_buf )
+        while ( (pSPI->spi_cs & SPI0_RXD) && (rx_count < count) )
         {
-            while ( (pSPI->spi_cs & SPI0_RXD) && (rx_count < count) )
+            dmb();
+            byte = pSPI->spi_fifo;
+            if ( rx_buf )
             {
-                dmb();
-                rx_buf[rx_count] = pSPI->spi_fifo;
-                rx_count++;
+                rx_buf[rx_count] = byte;
             }
+            rx_count++;
         }
     }
 
@@ -269,7 +298,7 @@ void bcm2835_spi_transfer_Ex(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t count)
 }
 
 /*------------------------------------------------
- * bcm2835_spi_send_byte()
+ * bcm2835_spi0_send_byte()
  *
  *  Transmit one byte drop the return byte.
  *
@@ -277,13 +306,13 @@ void bcm2835_spi_transfer_Ex(uint8_t *tx_buf, uint8_t *rx_buf, uint32_t count)
  * return: none
  *
  */
-void bcm2835_spi_send_byte(uint8_t byte)
+void bcm2835_spi0_send_byte(uint8_t byte)
 {
-    bcm2835_spi_transfer_Ex(&byte, 0, 1);
+    bcm2835_spi0_transfer_Ex(&byte, 0, 1);
 }
 
 /*------------------------------------------------
- * bcm2835_spi_recv_byte()
+ * bcm2835_spi0_recv_byte()
  *
  *  Receive one byte by sending dummy data.
  *
@@ -291,17 +320,17 @@ void bcm2835_spi_send_byte(uint8_t byte)
  * return: Data byte returned
  *
  */
-int bcm2835_spi_recv_byte(void)
+int bcm2835_spi0_recv_byte(void)
 {
     uint8_t byte = 0;
 
-    bcm2835_spi_transfer_Ex(&byte, &byte, 1);
+    bcm2835_spi0_transfer_Ex(&byte, &byte, 1);
 
     return byte;
 }
 
 /*------------------------------------------------
- * bcm2835_spi_recv_byte()
+ * bcm2835_spi0_recv_byte()
  *
  *  Transmit a byte and return the received byte
  *
@@ -309,11 +338,11 @@ int bcm2835_spi_recv_byte(void)
  * return: Data byte returned
  *
  */
-int bcm2835_spi_transfer_byte(uint8_t tx_byte)
+int bcm2835_spi0_transfer_byte(uint8_t tx_byte)
 {
     uint8_t rx_byte;
 
-    bcm2835_spi_transfer_Ex(&tx_byte, &rx_byte, 1);
+    bcm2835_spi0_transfer_Ex(&tx_byte, &rx_byte, 1);
 
     return rx_byte;
 }

@@ -41,7 +41,7 @@ CCFLAGS += -D$(PIMODEL)
 #------------------------------------------------------------------------------------
 # Build all targets
 #------------------------------------------------------------------------------------
-all: fb
+all: uart1
 
 #------------------------------------------------------------------------------------
 # Build samples
@@ -58,7 +58,7 @@ led1: start.o led1.o
 	cp $@.img $(BOOTDIR)/kernel.img
 
 uart1: start.o uart1.o
-	$(LD) $(LDFLAGS) -L $(MYLIBDIR) -o $@.elf $? -lgpio
+	$(LD) $(LDFLAGS) -L $(LIBDIR1) -L $(LIBDIR2) -L $(MYLIBDIR) -o $@.elf $? -lgpio -lprintf -lgcc -lg_nano
 	$(OBJCOPY) $@.elf -O binary $@.img
 #	$(OBJCOPY) $@.elf -O binary $@.$(PIMODEL).img
 	cp $@.img $(BOOTDIR)/kernel.img

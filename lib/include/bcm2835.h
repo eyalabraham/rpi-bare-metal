@@ -55,7 +55,7 @@
 // TODO #define     BCM2835_GPIO_PWM            (BCM2835_PERI_BASE+0x20C000)    // PWM
 #define     BCM2835_AUX_BASE            (BCM2835_PERI_BASE+0x215000)    // AUX peripherals' base
 #define     BCM2835_AUX_UART1           (BCM2835_PERI_BASE+0x215040)    // AUX peripherals' Mini-UART base
-// TODO #define     BCM2835_AUX_SPI1            (BCM2835_PERI_BASE+0x215080)    // AUX peripherals' SPI1 base
+#define     BCM2835_AUX_SPI1            (BCM2835_PERI_BASE+0x215080)    // AUX peripherals' SPI1 base
 // TODO #define     BCM2835_BSC1_BASE           (BCM2835_PERI_BASE+0x804000)    // BSC1 I2C
 
 /* -----------------------------------------------------
@@ -288,7 +288,7 @@ typedef struct
     volatile uint32_t   spi_dlen;
     volatile uint32_t   spi_ltoh;
     volatile uint32_t   spi_dc;
-} spi_regs_t;
+} spi0_regs_t;
 
 /* -----------------------------------------------------
  *      Auxiliary peripheral
@@ -316,12 +316,19 @@ typedef struct
 
 typedef struct
 {
-    volatile uint32_t   aux_spi1_cntl0_reg;
-    volatile uint32_t   aux_spi1_cntl1_reg;
-    volatile uint32_t   aux_spi1_stat_reg;
-    volatile uint32_t   reserved0;
-    volatile uint32_t   aux_spi1_io_reg;
-    volatile uint32_t   aux_spi1_peek_reg;
+    volatile uint32_t   aux_spi1_cntl0_reg;     // xxxxxx80
+    volatile uint32_t   aux_spi1_cntl1_reg;     // xxxxxx84
+    volatile uint32_t   aux_spi1_stat_reg;      // xxxxxx88
+    volatile uint32_t   aux_spi1_peek_reg;      // xxxxxx8c
+    volatile uint32_t   reserved0;              // xxxxxx90
+    volatile uint32_t   reserved1;              // xxxxxx94
+    volatile uint32_t   reserved2;              // xxxxxx98
+    volatile uint32_t   reserved3;              // xxxxxx9c
+    volatile uint32_t   aux_spi1_io_reg;        // xxxxxxa0
+    volatile uint32_t   reserved4;              // xxxxxxa4
+    volatile uint32_t   reserved5;              // xxxxxxa8
+    volatile uint32_t   reserved6;              // xxxxxxac
+    volatile uint32_t   aux_spi1_tx_hold_reg;   // xxxxxxb0
 } auxiliary_spi1_regs_t;
 
 #endif  /* __BCM2835_H__ */

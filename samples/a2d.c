@@ -12,7 +12,7 @@
 #include    "printf.h"
 #include    "bcm2835.h"
 #include    "auxuart.h"
-#include    "spi.h"
+#include    "spi0.h"
 #include    "timer.h"
 
 /* -----------------------------------------
@@ -50,8 +50,8 @@ void kernel(uint32_t r0, uint32_t machid, uint32_t atags)
      */
     bcm2835_auxuart_init(BAUD_9600, 0, 0, AUXUART_DEFAULT);
 
-    bcm2835_spi_init(SPI_DEFAULT);
-    bcm2835_spi_set_rate(SPI0_DATA_RATE_61KHZ);
+    bcm2835_spi0_init(SPI0_DEFAULT);
+    bcm2835_spi0_set_rate(SPI0_DATA_RATE_61KHZ);
 
     /* Print some text
      */
@@ -94,7 +94,7 @@ int a2d_read(int channel)
     memset(rx_buf, 0, sizeof(rx_buf));
 
     tx_buf[0] = channel_id[channel] | AD_CONTROL;
-    bcm2835_spi_transfer_Ex(tx_buf, rx_buf, 3);
+    bcm2835_spi0_transfer_Ex(tx_buf, rx_buf, 3);
 
     conversion = (int)(((rx_buf[1] << 8) + rx_buf[2]) >> 4);
 

@@ -11,8 +11,18 @@
 
 #include    "bcm2835.h"
 #include    "auxuart.h"
+#include    "mailbox.h"
+#include    "printf.h"
 
-char    message[] = {"\r\nRPi bare-metal\r\nbcm2835 GPIO and Auxiliary UART (UART1)\r\nCPU ID: 0x\0"};
+/* -----------------------------------------
+   Module static functions
+----------------------------------------- */
+void halt(char *msg);
+
+/* -----------------------------------------
+   Module globals
+----------------------------------------- */
+char    message[] = {"\nRPi bare-metal\nbcm2835 GPIO and Auxiliary UART (UART1)\nCPU ID: \0"};
 
 /*------------------------------------------------
  * kernel()
@@ -24,9 +34,11 @@ char    message[] = {"\r\nRPi bare-metal\r\nbcm2835 GPIO and Auxiliary UART (UAR
  */
 void kernel(uint32_t r0, uint32_t machid, uint32_t atags)
 {
-    int     j;
-    uint8_t byte;
-    char   *i;
+    uint8_t     byte;
+    uint32_t    system_clock;
+    uint32_t    baud_rate_div;
+
+    mailbox_tag_property_t *mp;
 
     /* Initialize the IO system
      */
@@ -34,29 +46,55 @@ void kernel(uint32_t r0, uint32_t machid, uint32_t atags)
 
     /* Message
      */
-    for ( i = message; *i; i++ )
-    {
-        bcm2835_auxuart_putchr(*i);
-    }
+    printf("%s", message);
 
     /* CPU ID:
-     *  PI3 0x410FD034
-     *  PI2 0x410FC075
-     *  PI1 0x410FB767
+     *  PI3   0x410FD034
+     *  PI2   0x410FC075
+     *  PI1/0 0x410FB767
      */
-    for ( j = 0; j < 8; j++ )
-    {
-        byte = (uint8_t)((machid & 0xf0000000) >> 28);
-        if ( byte < 10 )
-            byte += 48; // ASCII '0'..'9'
-        else
-            byte += 87; // ASCII 'a'..'f'
-        bcm2835_auxuart_putchr(byte);
-        machid = machid << 4;
-    }
+    printf("0x%08x\n", machid);
 
-    bcm2835_auxuart_putchr('\r');
-    bcm2835_auxuart_putchr('\n');
+    /* Retrieve core clock speed
+     */
+    bcm2835_mailbox_init();
+    bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_CORE);
+    //bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_ARM);
+    //bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_UART);
+    //bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_ISP);
+
+    if ( !bcm2835_mailbox_process() )
+        halt("Mailbox call failed.");
+
+    mp = bcm2835_mailbox_get_property(TAG_GET_CLOCK_RATE);
+    if ( mp )
+    {
+        system_clock = mp->values.fb_alloc.param2;
+        baud_rate_div = (system_clock / (57600 * 8)) - 1;
+        printf("Core clock: %u[Hz]\n", system_clock);
+        printf("  Aux UART baud rate divisor: %u\n", baud_rate_div);
+    }
+    else
+        halt("failed TAG_CLOCK_CORE");
+
+    /* Retrieve ARM clock speed
+     */
+    bcm2835_mailbox_init();
+    //bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_CORE);
+    bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_ARM);
+    //bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_UART);
+    //bcm2835_mailbox_add_tag(TAG_GET_CLOCK_RATE, TAG_CLOCK_ISP);
+
+    if ( !bcm2835_mailbox_process() )
+        halt("Mailbox call failed.");
+
+    mp = bcm2835_mailbox_get_property(TAG_GET_CLOCK_RATE);
+    if ( mp )
+    {
+        printf("ARM clock: %u[Hz]\n", mp->values.fb_alloc.param2);
+    }
+    else
+        halt("failed TAG_CLOCK_CORE");
 
     /* Character echo loop
      */
@@ -67,4 +105,37 @@ void kernel(uint32_t r0, uint32_t machid, uint32_t atags)
             bcm2835_auxuart_putchr('\n');
         bcm2835_auxuart_putchr(byte);     //  and echo it back.
     }
+}
+
+/*------------------------------------------------
+ * halt()
+ *
+ *  Print message and halt in endless loop
+ *
+ *  param:  Message
+ *  return: none
+ */
+void halt(char *msg)
+{
+    printf("%s\nHalted.\n", msg);
+
+    while (1)
+    {
+        /* Do nothing */
+    }
+}
+
+/*------------------------------------------------
+ * _putchar()
+ *
+ *  Low level character output/stream for printf()
+ *
+ *  param:  character
+ *  return: none
+ */
+void _putchar(char character)
+{
+    if ( character == '\n')
+        bcm2835_auxuart_putchr('\r');
+    bcm2835_auxuart_putchr(character);
 }
