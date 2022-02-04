@@ -47,6 +47,9 @@
 #define     SPI0_CS1                    0x00000001      // 00- CS0, 01- CS1, 10- CS2 (not available)
 #define     SPI0_CS_MASK                0x00000003      // Chip Select mask, clear bit for CS0
 
+#define     SPI0_MIN_RATE               32000           // ~32KHz
+#define     SPI0_MAX_RATE               10000000        // actual ~9.6MHz
+
 /* -----------------------------------------
    Types and data structures
 ----------------------------------------- */
@@ -152,6 +155,13 @@ int bcm2835_spi0_set_rate(uint32_t data_rate)
 {
     uint32_t    system_clock;
     uint32_t    spi_rate_div;
+
+    /* Limit check
+     */
+    if ( data_rate > SPI0_MAX_RATE )
+        data_rate = SPI0_MAX_RATE;
+    else if ( data_rate < SPI0_MIN_RATE )
+        data_rate = SPI0_MIN_RATE;
 
     /* Get core frequency and dynamically calculate rate divisor
      */

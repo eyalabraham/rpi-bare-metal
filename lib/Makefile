@@ -47,7 +47,7 @@ all: libgpio libprintf
 #------------------------------------------------------------------------------------
 # Build static libraries
 #------------------------------------------------------------------------------------
-libgpio: gpio.o auxuart.o spi0.o timer.o irq.o irq_util.o mailbox.o
+libgpio: gpio.o auxuart.o spi0.o spi1.o timer.o irq.o irq_util.o mailbox.o
 	$(AR) rcsv $@.a $?
 
 libprintf: printf.o
